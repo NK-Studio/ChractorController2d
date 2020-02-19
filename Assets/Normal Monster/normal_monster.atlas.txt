@@ -1,0 +1,104 @@
+
+normal_monster.png
+size: 397,505
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+body
+  rotate: false
+  xy: 2, 246
+  size: 141, 259
+  orig: 141, 260
+  offset: 0, 0
+  index: -1
+head
+  rotate: 270
+  xy: 212, 127
+  size: 109, 158
+  orig: 130, 158
+  offset: 21, 0
+  index: -1
+larmdown
+  rotate: 180
+  xy: 70, 3
+  size: 118, 64
+  orig: 118, 65
+  offset: 0, 1
+  index: -1
+larmhand
+  rotate: false
+  xy: 182, 12
+  size: 73, 49
+  orig: 73, 50
+  offset: 0, 0
+  index: -1
+larmup
+  rotate: false
+  xy: 78, 41
+  size: 134, 87
+  orig: 134, 87
+  offset: 0, 0
+  index: -1
+llegdown
+  rotate: false
+  xy: 324, 302
+  size: 63, 203
+  orig: 64, 203
+  offset: 1, 0
+  index: -1
+llegfoot
+  rotate: 180
+  xy: 184, 61
+  size: 99, 85
+  orig: 99, 85
+  offset: 0, 0
+  index: -1
+llegup
+  rotate: 180
+  xy: 241, 254
+  size: 84, 251
+  orig: 84, 251
+  offset: 0, 0
+  index: -1
+rarmdown
+  rotate: true
+  xy: 281, 86
+  size: 56, 115
+  orig: 56, 116
+  offset: 0, 1
+  index: -1
+rarmhand
+  rotate: true
+  xy: 260, 18
+  size: 70, 130
+  orig: 71, 130
+  offset: 0, 0
+  index: -1
+rarmup
+  rotate: 270
+  xy: 18, 186
+  size: 85, 151
+  orig: 85, 151
+  offset: 0, 0
+  index: -1
+rlegdown
+  rotate: 270
+  xy: 30, 89
+  size: 99, 182
+  orig: 99, 184
+  offset: 0, 1
+  index: -1
+rlegup
+  rotate: false
+  xy: 125, 260
+  size: 121, 244
+  orig: 122, 244
+  offset: 0, 0
+  index: -1
+weapon
+  rotate: true
+  xy: 2, 138
+  size: 164, 385
+  orig: 164, 386
+  offset: 0, 0
+  index: -1

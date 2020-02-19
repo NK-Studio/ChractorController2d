@@ -1,0 +1,111 @@
+
+ex_monster.png
+size: 376,946
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+Body
+  rotate: false
+  xy: 2, 643
+  size: 186, 302
+  orig: 186, 302
+  offset: 0, 0
+  index: -1
+Head
+  rotate: false
+  xy: 64, 349
+  size: 107, 140
+  orig: 108, 140
+  offset: 1, 0
+  index: -1
+L_arm_down
+  rotate: true
+  xy: 271, 37
+  size: 146, 72
+  orig: 146, 72
+  offset: 0, 0
+  index: -1
+L_arm_hand
+  rotate: true
+  xy: 289, 629
+  size: 86, 84
+  orig: 86, 84
+  offset: 0, 0
+  index: -1
+L_arm_up
+  rotate: 270
+  xy: 237, 540
+  size: 144, 109
+  orig: 145, 109
+  offset: 1, 0
+  index: -1
+L_leg_down
+  rotate: false
+  xy: 2, 436
+  size: 78, 228
+  orig: 78, 228
+  offset: 0, 0
+  index: -1
+L_leg_foot
+  rotate: 180
+  xy: 199, 3
+  size: 111, 83
+  orig: 111, 83
+  offset: 0, 0
+  index: -1
+L_leg_up
+  rotate: 180
+  xy: 226, 685
+  size: 117, 260
+  orig: 117, 261
+  offset: 0, 1
+  index: -1
+R_arm_down
+  rotate: true
+  xy: 253, 391
+  size: 147, 83
+  orig: 147, 87
+  offset: 0, 0
+  index: -1
+R_arm_hand
+  rotate: true
+  xy: 266, 183
+  size: 107, 75
+  orig: 127, 92
+  offset: 20, 17
+  index: -1
+R_arm_up
+  rotate: true
+  xy: 73, 495
+  size: 166, 93
+  orig: 166, 93
+  offset: 0, 0
+  index: -1
+R_leg_down
+  rotate: false
+  xy: 2, 236
+  size: 123, 205
+  orig: 123, 205
+  offset: 0, 0
+  index: -1
+R_leg_foot
+  rotate: false
+  xy: 255, 292
+  size: 89, 89
+  orig: 89, 89
+  offset: 0, 0
+  index: -1
+R_leg_up
+  rotate: 270
+  xy: 2, 5
+  size: 142, 257
+  orig: 142, 258
+  offset: 0, 0
+  index: -1
+weapon
+  rotate: false
+  xy: 182, 137
+  size: 88, 808
+  orig: 88, 808
+  offset: 0, 0
+  index: -1
