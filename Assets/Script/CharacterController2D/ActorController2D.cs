@@ -5,7 +5,7 @@ using UnityEngine.Events;
 //1.0.0
 //프로토타입 버전
 
-namespace Unity
+namespace UnityEngine
 {
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(CapsuleCollider2D))]
@@ -100,7 +100,7 @@ namespace Unity
             MoveDir = new Vector2(Mathf.RoundToInt(dir.x), 0);
 
             //이동을 하고 있다면 true, 멈추었다면 false
-            isMove = MoveDir.x != 0.0f ? true : false;
+            isMove = MoveDir.x != 0.0f;
         }
 
         private void FixedUpdate()
