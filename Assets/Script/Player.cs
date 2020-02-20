@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections;
-using UnityEditorInternal;
 using UnityEngine;
 
 public class Player : PlayerController2D
@@ -36,7 +35,7 @@ public class Player : PlayerController2D
 
     private void OnAnimGroundCheck(bool Check) =>
         animator.SetBool(ID_Ground, Check);
-    
+
     private void OnAnimFall() =>
         animator.SetTrigger(ID_Jump);
 
@@ -49,25 +48,39 @@ public class Player : PlayerController2D
     private void OnAnimAttack()
     {
         animator.SetTrigger(ID_Attack);
-        
+
         //공격시 이동 불가
         CanMove = false;
     }
-    
+
     private void OnPlayerFallingToGround(object sender, EventArgs e)
     {
-        //점프 한 상태에서, 땅에 떨어지고 있는 상황이고 땅에 닿은 상태라면
-        if (getFallingToTouchGround())
-            //캐릭터 이동을 얼림
-            CanMove = false;
-        
-        //착지 동작을 하지 않고 있다면 아래 코드 구문 실행 X
-        if (!animState.IsName("jump_end")) return;
+        //착지 모션을 수행하고 있거나 (점프 한 상태에서, 땅에 떨어지고 있는 상황이고, 땅에 닿은 상태가 아직 아니라면),
+        //아래 코드 구문 실행 X
+        if (isFallingToGroundMotion || !getFallingToTouchGround()) return;
 
-        //착지 애니메이션이 모두 재생된 상태가 아니라면 아래 코드 구문 실행 X
-        if (!(animState.normalizedTime > 0.9f)) return;
-        
+        //착지 모션 상태로 전환
+        isFallingToGroundMotion = true;
+
+        //땅에 착지시 모션 실행
+        StartCoroutine(IFallingToGround());
+    }
+
+    private IEnumerator IFallingToGround()
+    {
+        //캐릭터 이동을 얼림
+        CanMove = false;
+
+        //jump_end모션을 할때까지 대기
+        yield return new WaitUntil(() => animState.IsName("jump_end"));
+
+        //착지 애니메이션이 모두 재생된 상태가 될때까지 대기
+        yield return new WaitForSeconds(animState.length);
+
         //이동 가능하게 함
         CanMove = true;
+
+        //땅에 닿았을 때 모션을 해제함
+        isFallingToGroundMotion = false;
     }
 }

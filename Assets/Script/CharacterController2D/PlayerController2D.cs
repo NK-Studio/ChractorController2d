@@ -84,6 +84,7 @@ namespace UnityEngine
         protected bool isFlipped;
         protected bool isJump;
         protected bool isFall;
+        protected bool isFallingToGroundMotion;
         protected bool isGround = true;
         protected event EventHandler PlayerUpdate;
         protected event EventHandler PlayerFixedUpdate;
