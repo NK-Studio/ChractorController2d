@@ -1,11 +1,12 @@
 ﻿using System;
-using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine.Events;
 
 //1.0.0
 //프로토타입 버전
 
-namespace Unity
+namespace UnityEngine
 {
     public enum PlayerSystem
     {
@@ -15,6 +16,12 @@ namespace Unity
         MOVE_ATTACK_JUMP
     }
 
+    public enum PlayerWorkType
+    {
+        SMOOTH,
+        HARD
+    }
+
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(CapsuleCollider2D))]
     public abstract class PlayerController2D : MonoBehaviour
@@ -22,6 +29,7 @@ namespace Unity
         private static readonly Vector3 FlipScale = new Vector3(-1, 1, 1);
 
         #region 파라미터
+
         [Header("타일 인식")]
         [SerializeField, Tooltip("땅을 인식할 레이어")]
         protected LayerMask GroundMask;
@@ -35,6 +43,9 @@ namespace Unity
 
         [SerializeField, Tooltip("플레이어가 지원할 기능")]
         private PlayerSystem playerSystem;
+
+        [SerializeField, Tooltip("이동 방식을 부드럽게할것인지, 딱딱하게 할것인지")]
+        private PlayerWorkType playerWorkType;
 
         [Tooltip("애니메이션 상태 정보를 알려줌")]
         protected AnimatorStateInfo animState;
@@ -63,23 +74,26 @@ namespace Unity
 
         [SerializeField, Tooltip("캐릭터의 이동 권한")]
         protected bool CanMove = true; // 캐릭터가 이동에 대한 제약 조건
-        
+
+        [SerializeField, Tooltip("땅에 있을때만 공격 가능")]
+        protected bool CanAttackToGround = true;
+
         //HideInspector
         protected Rigidbody2D rig;
         protected bool isAttack;
         protected bool isFlipped;
         protected bool isJump;
         protected bool isFall;
-        protected bool isFallEndMotion; //점프를 하고나서 이동에 대한 처리
         protected bool isGround = true;
         protected event EventHandler PlayerUpdate;
         protected event EventHandler PlayerFixedUpdate;
-        protected event EventHandler PlayerFallLanding;
-        protected UnityAction AnimJump,AnimFall;
+        protected event EventHandler PlayerFallingToGround;
+        protected UnityAction AnimJump, AnimFall, AnimAttack;
         protected UnityAction<float> AnimMove;
-        protected UnityAction AttackStart, AttackEnd;
+        protected UnityAction<bool> AnimGroundCheck;
+
         #endregion
-        
+
         private Vector2 MovementInput; //이동에 대한 값 처리
         private bool JumpInput;
         private bool AttackInput;
@@ -92,6 +106,11 @@ namespace Unity
             Key.right = right;
             Key.attack = attack;
             Key.jump = jump;
+        }
+
+        protected bool getFallingToTouchGround()
+        {
+            return isFall && !isGround && GroundCollider.IsTouchingLayers(GroundMask);
         }
 
         private void Awake()
@@ -163,11 +182,15 @@ namespace Unity
 
             UpdateGravityScale();
 
+            //땅에 터칭 되었을 때,
+
+
             //애니메이터 컴포넌트가 null이 아니라면 정상적으로 해당 애니메이터 상태를 갱신한다.
             animState = (AnimatorStateInfo) animator?.GetCurrentAnimatorStateInfo(0);
 
             PlayerFixedUpdate?.Invoke(this, EventArgs.Empty);
         }
+
 
         private void PlayerJump()
         {
@@ -177,17 +200,28 @@ namespace Unity
 
         private void PlayerAttack()
         {
-            if (isGround && !isAttack && Input.GetKeyDown(Key.attack))
-                AttackInput = true;
+            if (CanAttackToGround)
+            {
+                if (isGround && !isAttack && Input.GetKeyDown(Key.attack))
+                    AttackInput = true;
+            }
+            else
+            {
+                if (!isAttack && Input.GetKeyDown(Key.attack))
+                    AttackInput = true;
+            }
         }
 
         private void UpdateGround()
         {
             //땅에 착지된 모션 실행 요건이 있다면 실행
-            PlayerFallLanding?.Invoke(this, EventArgs.Empty);
-            
+            PlayerFallingToGround?.Invoke(this, EventArgs.Empty);
+
             //땅에 닿으면 true, 땅에 닿지 않은 상태라면 false를 반환
             isGround = GroundCollider.IsTouchingLayers(GroundMask);
+
+            //땅 체크를 애니메이터에 전송 함
+            AnimGroundCheck?.Invoke(isGround);
         }
 
         private void UpdateHorizontalMove()
@@ -195,19 +229,36 @@ namespace Unity
             //좌우 이동을 위한 벨로시티 객체 생성
             Vector2 Velocity = rig.velocity;
 
-            //값 대입
-            Velocity += MovementInput * acceleration * Time.fixedDeltaTime;
-
-            //좌우 이동, 멈춤에 대한 인풋 값 초기화
-            MovementInput = Vector2.zero;
+            switch (playerWorkType)
+            {
+                case PlayerWorkType.SMOOTH:
+                    Velocity.x += MovementInput.x * acceleration * Time.fixedDeltaTime;
+                    break;
+                case PlayerWorkType.HARD:
+                    Velocity.x = MovementInput.x * (acceleration * 10) * Time.fixedDeltaTime;
+                    break;
+            }
 
             //최대 이동 속도를 제한 함.
             Velocity.x = Mathf.Clamp(Velocity.x, -maxSpeed, maxSpeed);
-            
+
             //적용
             rig.velocity = Velocity;
 
-            var horizontalSpeedNormalized = Mathf.Abs(Velocity.x) / maxSpeed;
+            float horizontalSpeedNormalized = 0.0f;
+
+            switch (playerWorkType)
+            {
+                case PlayerWorkType.SMOOTH:
+                    horizontalSpeedNormalized = Mathf.Abs(Velocity.x) / maxSpeed;
+                    break;
+                case PlayerWorkType.HARD:
+                    horizontalSpeedNormalized = Mathf.Abs(Input.GetAxisRaw("Horizontal"));
+                    break;
+            }
+
+            //좌우 이동, 멈춤에 대한 인풋 값 초기화
+            MovementInput = Vector2.zero;
 
             //애니메이션 처리
             AnimMove?.Invoke(horizontalSpeedNormalized);
@@ -266,31 +317,42 @@ namespace Unity
                 isFall = true;
                 AnimFall?.Invoke();
             }
-            else if(isGround)
+            else if (isGround)
             {
                 isFall = false;
             }
         }
-        
+
         private void UpdateAttack()
         {
-            if (AttackInput)
+            if (AttackInput && !isAttack)
             {
                 //초기화
                 AttackInput = false;
 
-                //공격 애니메이션 적용
-                AttackStart?.Invoke();
+                //공격 체크
+                StartCoroutine(IAttack());
             }
 
-            //공격 중이 아니라면 아래 코드 구문 실행 X
-            if (!isAttack) return;
+            //공격 중이며, 이동 불가 처리를 했을 경우.
+            if (!CanMove && isAttack)
+                rig.velocity = Vector2.zero;
 
-            //공격시 미끄러짐 방지
-            rig.velocity = Vector2.zero;
+            IEnumerator IAttack()
+            {
+                //공격 중
+                isAttack = true;
 
-            //공격중에 처리
-            AttackEnd?.Invoke();
+                //애니메이션 재생
+                AnimAttack?.Invoke();
+
+                //공격 애니메이션이 끝날 때까지 대기
+                yield return new WaitForSeconds(animState.length);
+
+                //공격 끝
+                isAttack = false;
+                CanMove = true;
+            }
         }
 
         private void UpdateGravityScale()
