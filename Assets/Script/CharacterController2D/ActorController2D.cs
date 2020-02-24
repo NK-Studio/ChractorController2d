@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 
 //1.0.0
 //프로토타입 버전
@@ -58,6 +60,8 @@ namespace UnityEngine
         protected Transform Target;
 
         private Vector2 MoveDir;
+        private bool JumpInput;
+
         protected Rigidbody2D rig;
         protected bool isTracking;
         protected bool isAttack;
@@ -68,14 +72,41 @@ namespace UnityEngine
         protected bool isFall;
         protected bool isFallEndMotion; //점프를 하고나서 이동에 대한 처리
         protected bool isGround = true;
-        
+
         protected event EventHandler ActorUpdate;
         protected event EventHandler ActorFixedUpdate;
         protected event EventHandler ActorFallLanding;
-        protected UnityAction AnimJump,AnimFall;
+        protected UnityAction AnimJump, AnimFall;
         protected UnityAction<float> AnimMove;
         protected UnityAction AttackStart, AttackEnd;
+
+        protected string CurrentPlayingAnimation
+        {
+            get
+            {
+                var info = animator.GetCurrentAnimatorClipInfo(0);
+                foreach (var item in info)
+                {
+                    if (animState.IsName(item.clip.name))
+                        return item.clip.name;
+                }
+
+                return null;
+            }
+        }
         
+        [SerializeField, Header("벽인지 체크")]
+        protected Transform CheckWall;
+
+        [SerializeField,Tooltip("Ray가 벽에 닿았을 때, 점프하는 범위를 표시")]
+        private bool DebugMode;
+        
+        protected virtual bool isShowBeginJumpMotion()
+        {
+            //점프하기전 모션을 수행할 것인가? 디폴트는 false
+            return false;
+        }
+
         private void Awake()
         {
             rig = GetComponent<Rigidbody2D>();
@@ -88,16 +119,22 @@ namespace UnityEngine
         private void Update()
         {
             ActorUpdate?.Invoke(this, EventArgs.Empty);
-            
+
             MoveDir = Vector2.zero;
-            
-            if (!isTracking || isStopped) return;            
-            
+
+            if (!isTracking || isStopped) return;
+
             //방향 구하기
             var dir = (Target.position - transform.position).normalized;
 
+            //방향 X를 처리함
+            if (dir.x > 0f)
+                dir.x = 1f;
+            else if (dir.x < 0f)
+                dir.x = -1;
+
             //추적할 객체가 왼쪽에 있다면 -1, 오른쪽에 있다면 1을 계산한다. 
-            MoveDir = new Vector2(Mathf.RoundToInt(dir.x), 0);
+            MoveDir = new Vector2(dir.x, 0);
 
             //이동을 하고 있다면 true, 멈추었다면 false
             isMove = MoveDir.x != 0.0f;
@@ -111,11 +148,12 @@ namespace UnityEngine
             UpdateJump();
             UpdateFall();
             UpdateGravityScale();
+            UpdateWallCheck();
 
             UpdateTracking();
 
             ActorFixedUpdate?.Invoke(this, EventArgs.Empty);
-            
+
             //애니메이터 컴포넌트가 null이 아니라면 정상적으로 해당 애니메이터 상태를 갱신한다.
             animState = (AnimatorStateInfo) animator?.GetCurrentAnimatorStateInfo(0);
         }
@@ -124,14 +162,67 @@ namespace UnityEngine
         {
             //땅에 착지된 모션 실행 요건이 있다면 실행
             ActorFallLanding?.Invoke(this, EventArgs.Empty);
-            
+
             //땅에 닿으면 true, 땅에 닿지 않은 상태라면 false를 반환
             isGround = GroundCollider.IsTouchingLayers(GroundMask);
         }
 
         private void UpdateJump()
         {
-            AnimJump?.Invoke();
+            //점프를 시전했고, 땅으로 떨어지는 낙하 중이라면,
+            if (isJump && rig.velocity.y < 0)
+                isFall = true;
+
+            //점프의 입력이 들어왔고, 땅에 있는 경우
+            if (JumpInput && isGround && !isJump)
+            {
+                //점프 입력을 초기화
+                JumpInput = false;
+
+                //점프 중으로 처리
+                isJump = true;
+
+                //점프 전 모션이 있을 경우
+                if (isShowBeginJumpMotion())
+                {
+                    //점프 동작 후 점프를 할 수 있도록 처리
+                    StartCoroutine(BeginJumpMotion());
+
+                    //추적을 잠시 멈춤
+                    isStopped = true;
+
+                    //멈췄을 때 미끄러지는 것을 방지
+                    rig.velocity = Vector2.zero;
+                }
+                else //점프 전 모션이 없음
+                {
+                    //점프 애니메이션 적용
+                    AnimJump?.Invoke();
+                    // 점프 적용 : ForceMode2D -> Impulse = 힘을 팍!, Force = 힘을 파아아아악~~!
+                    //Impulse는 힘을 순간적으로 적용하고, Forces는 힘을 지속적으로 준다.
+                    rig.AddForce(new Vector2(0, jumpForce), ForceMode2D.Impulse);
+                }
+            }
+            //땅에 닿았을 때 데이터 처리
+            else if (isJump && isFall && isGround)
+            {
+                // 점프 관련 변수를 초기화
+                isJump = false;
+                isFall = false;
+            }
+
+            IEnumerator BeginJumpMotion()
+            {
+                AnimJump?.Invoke();
+                var currentAnim = CurrentPlayingAnimation;
+                //점프 애니메이션 적용
+                yield return new WaitUntil(() => !animState.IsName(currentAnim));
+                yield return new WaitForSeconds(animState.length - 0.25f);
+                // 점프 적용 : ForceMode2D -> Impulse = 힘을 팍!, Force = 힘을 파아아아악~~!
+                //Impulse는 힘을 순간적으로 적용하고, Forces는 힘을 지속적으로 준다.
+                rig.AddForce(new Vector2(transform.localScale.x * (acceleration * 0.35f), jumpForce),
+                    ForceMode2D.Impulse);
+            }
         }
 
         private void UpdateFall()
@@ -141,7 +232,7 @@ namespace UnityEngine
                 isFall = true;
                 AnimFall?.Invoke();
             }
-            else if(isGround)
+            else if (isGround)
             {
                 isFall = false;
             }
@@ -150,8 +241,8 @@ namespace UnityEngine
         private void UpdateTracking()
         {
             //스톱이 true이면 아래 코드 구문 실행 X
-            if(isStopped) return;
-            
+            if (isStopped) return;
+
             //좌우 이동을 위한 벨로시티 객체 생성
             Vector2 Velocity = rig.velocity;
 
@@ -168,7 +259,7 @@ namespace UnityEngine
             rig.velocity = Velocity;
 
             var horizontalSpeedNormalized = Mathf.Abs(Velocity.x) / maxSpeed;
-            
+
             //애니메이션 처리
             AnimMove?.Invoke(horizontalSpeedNormalized);
         }
@@ -203,6 +294,20 @@ namespace UnityEngine
             rig.gravityScale = gravityScale;
         }
 
+        private void UpdateWallCheck()
+        {
+            //트랙킹을 하지 않는다면, 아래 코드 구문 실행 X
+            if (!isTracking) return;
+
+            //레이를 뽕~~쏜다.
+            var hit = Physics2D.Linecast(transform.position, CheckWall.position,
+                LayerMask.GetMask("Ground"));
+
+            //점프 중이 아닌 상태에서, 벽에 닿았을 때, 점프 시전
+            if (!isJump && hit.collider != null)
+                JumpInput = true;
+        }
+
         protected void SetDestination(Transform pTarget)
         {
             Target = pTarget;
@@ -215,8 +320,23 @@ namespace UnityEngine
             if (!isTracking) return 0f;
 
             var distance = (Target.position - transform.position).sqrMagnitude;
-            
+
             return distance;
+        }
+
+        private void OnDrawGizmos()
+        {
+            if(!DebugMode) return;
+
+            //라인의 컬러를 빨간색으로 설정
+            Gizmos.color = Color.red;
+
+            //CheckWall이 null이면, 아래 코드 구문 실행 X
+            if (CheckWall == null) return;
+
+            var wallPos = CheckWall.position;
+            Gizmos.DrawSphere(wallPos, 0.15f);
+            Gizmos.DrawLine(transform.position, wallPos);
         }
     }
 }

@@ -9,6 +9,7 @@
     "com.unity.textmeshpro": "2.0.1",
     "com.unity.timeline": "1.2.10",
     "com.unity.ugui": "1.0.0",
+    "net.peeweek.gameplay-ingredients": "https://github.com/peeweek/net.peeweek.gameplay-ingredients.git",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",
     "com.unity.modules.animation": "1.0.0",
@@ -40,5 +41,11 @@
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
     "com.unity.modules.xr": "1.0.0"
+  },
+  "lock": {
+    "net.peeweek.gameplay-ingredients": {
+      "revision": "HEAD",
+      "hash": "3a1c7a4d83bb31cd7cfe5e18468719392a154d73"
+    }
   }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using Unity;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class Monster : ActorController2D
 {
@@ -19,14 +20,23 @@ public class Monster : ActorController2D
     {
         ActorFallLanding += OnActorFallLanding;
 
-        AnimMove += OnAnimMove;
-        AnimFall += OnAnimFall;
+        AnimJump = OnAnimJump;
+        AnimMove = OnAnimMove;
+        AnimFall = OnAnimFall;
 
         ActorUpdate += OnActorUpdate;
         
         //공격 방식을 랜덤으로 잡음
         //attackType = (AttackType)Random.Range(0, 2);
         attackType = AttackType.Combo;
+    }
+
+    private void OnAnimJump()=>
+        animator.SetTrigger(ID_Jump);
+    
+    protected override bool isShowBeginJumpMotion( )
+    {
+        return true;
     }
 
     private void OnActorFallLanding(object sender, EventArgs e)
@@ -78,8 +88,6 @@ public class Monster : ActorController2D
     {
         //트랙킹 상태가 아니라면 아래 코드 구문 실행 X
         if (!isTracking) return;
-        
-        Debug.Log(getDistance());
 
         switch (attackType)
         {

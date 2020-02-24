@@ -18,19 +18,19 @@ public class Player : PlayerController2D
         PlayerFallingToGround += OnPlayerFallingToGround;
 
         //점프 애니메이션 적용
-        AnimJump += OnAnimJump;
+        AnimJump = OnAnimJump;
 
         //떨어지는 애니메이션 적용
-        AnimFall += OnAnimFall;
+        AnimFall = OnAnimFall;
 
         //이동 애니메이션 적용
-        AnimMove += OnAnimMove;
+        AnimMove = OnAnimMove;
 
         //공격 애니메이션 적용
-        AnimAttack += OnAnimAttack;
+        AnimAttack = OnAnimAttack;
 
         //땅에 닿았을때, 데이터를 애니메이터에 적용
-        AnimGroundCheck += OnAnimGroundCheck;
+        AnimGroundCheck = OnAnimGroundCheck;
     }
 
     private void OnAnimGroundCheck(bool Check) =>
